@@ -17,15 +17,15 @@ export function NavBar() {
   return (
     <header className="sticky top-0 z-50 border-b border-[--color-border] bg-[--color-surface]/95 backdrop-blur-sm">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          {/* Logo / Guild Name */}
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-lg font-bold tracking-wide text-[--color-gold]">
-              🍍 Pineapple Loot Xpress
+        <div className="flex h-14 sm:h-16 items-center justify-between gap-4">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2 shrink-0">
+            <span className="text-base sm:text-lg font-bold tracking-wide text-[--color-gold]">
+              🍍 <span className="hidden xs:inline">Pineapple </span>Loot Xpress
             </span>
           </Link>
 
-          {/* Main nav links */}
+          {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-1">
             {NAV_LINKS.map(({ href, label }) => {
               const active = pathname.startsWith(href);
@@ -46,11 +46,11 @@ export function NavBar() {
             })}
           </nav>
 
-          {/* Admin link */}
+          {/* Admin pill — always visible */}
           <Link
             href="/admin"
             className={cn(
-              "px-3 py-1.5 rounded border text-xs font-medium transition-colors",
+              "shrink-0 px-3 py-1.5 rounded border text-xs font-medium transition-colors",
               pathname.startsWith("/admin")
                 ? "border-[--color-gold] text-[--color-gold] bg-[--color-gold]/10"
                 : "border-[--color-border] text-[--color-text-muted] hover:border-[--color-gold]/50 hover:text-[--color-gold]"
@@ -60,8 +60,8 @@ export function NavBar() {
           </Link>
         </div>
 
-        {/* Mobile nav */}
-        <nav className="flex md:hidden gap-1 pb-2 overflow-x-auto">
+        {/* Mobile nav strip */}
+        <nav className="flex md:hidden gap-1 pb-2 overflow-x-auto scrollbar-none">
           {NAV_LINKS.map(({ href, label }) => {
             const active = pathname.startsWith(href);
             return (
@@ -69,7 +69,7 @@ export function NavBar() {
                 key={href}
                 href={href}
                 className={cn(
-                  "px-3 py-1.5 rounded-md text-sm whitespace-nowrap transition-colors",
+                  "px-3 py-1.5 rounded-md text-sm whitespace-nowrap transition-colors shrink-0",
                   active
                     ? "bg-[--color-surface-2] text-[--color-gold]"
                     : "text-[--color-text-muted] hover:text-[--color-text]"

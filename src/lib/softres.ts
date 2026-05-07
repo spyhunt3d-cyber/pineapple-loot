@@ -1,22 +1,26 @@
 /**
  * Softres.it API client.
  *
- * The Softres API returns a flat array of player reserve entries.
- * Each entry has item IDs (not names) — we resolve names via the
- * ItemCache table (backed by Wowhead's tooltip API).
+ * The Softres API returns a raid object with a `reserved` array.
+ * Actual shape: { _id, raidId, edition, instance, discord, reserved: [...] }
+ * Each reserve entry: { name, class, spec (numeric), items: [itemId, ...], note, created, updated }
  *
- * API shape per player entry:
- *   { name, class, spec (numeric), items: [itemId, ...], note, created, updated, dId, dU }
+ * Item IDs come as numbers — we store them as strings in the DB.
+ * Item names are resolved via the ItemCache table (backed by Wowhead).
  */
 
 import { prisma } from "./prisma";
 import { SPEC_ID_MAP } from "./wow-constants";
 
+// Wowhead subdomain — override via env for Classic realms
+// e.g. WOWHEAD_HOST=wotlk.wowhead.com  or  classic.wowhead.com
+const WOWHEAD_HOST = process.env.WOWHEAD_HOST ?? "www.wowhead.com";
+
 export interface SoftresEntry {
   name: string;
   class: string;
   spec: number;
-  specName: string; // resolved from SPEC_ID_MAP
+  specName: string;
   items: number[];
   note: string;
   created: string;
@@ -27,70 +31,181 @@ export interface SoftresEntry {
 
 export interface SoftresRaidData {
   raidId: string;
+  edition: string;
   entries: SoftresEntry[];
-  /** All unique item IDs referenced in this raid's reserves */
   itemIds: number[];
 }
 
-// Simple in-memory cache — keys are raidId strings, values expire after 5 min
+// ─── In-memory cache ─────────────────────────────────────────
 const responseCache = new Map<string, { data: SoftresRaidData; fetchedAt: number }>();
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL_MS  = 5 * 60 * 1000;
+const MAX_CACHE_ENTRIES = 200;
+
+/** Runtime validation of a single reserve entry from Softres. */
+function validateEntry(raw: unknown): raw is { name: string; class: string; spec: number; items: unknown[]; note?: string; created?: string; updated?: string; dId?: string; dU?: string } {
+  if (typeof raw !== "object" || raw === null) return false;
+  const r = raw as Record<string, unknown>;
+  return typeof r.name === "string" && typeof r.class === "string" && Array.isArray(r.items);
+}
+
+/** Parse and validate the top-level Softres API response. */
+function parseSoftresResponse(raw: unknown): { entries: SoftresEntry[]; edition: string } {
+  if (typeof raw !== "object" || raw === null) {
+    throw new Error("Softres API returned a non-object response");
+  }
+
+  const obj = raw as Record<string, unknown>;
+
+  // API returns { _id, raidId, edition, instance, reserved: [...] }
+  if (!Array.isArray(obj.reserved)) {
+    throw new Error(`Softres response missing 'reserved' array. Keys: ${Object.keys(obj).join(", ")}`);
+  }
+
+  const edition = typeof obj.edition === "string" ? obj.edition : "unknown";
+
+  const entries: SoftresEntry[] = [];
+  for (const item of obj.reserved) {
+    if (!validateEntry(item)) {
+      console.warn("[softres] Skipping malformed entry:", JSON.stringify(item).slice(0, 100));
+      continue;
+    }
+    // Only accept numeric item IDs; skip malformed ones
+    const validItems = item.items
+      .map(Number)
+      .filter((n) => Number.isFinite(n) && n > 0);
+
+    entries.push({
+      name:     item.name,
+      class:    item.class,
+      spec:     typeof item.spec === "number" ? item.spec : 0,
+      specName: SPEC_ID_MAP[item.spec as number]?.spec ?? `Spec ${item.spec}`,
+      items:    validItems,
+      note:     typeof item.note === "string" ? item.note : "",
+      created:  typeof item.created === "string" ? item.created : "",
+      updated:  typeof item.updated === "string" ? item.updated : "",
+      dId:      typeof item.dId === "string" ? item.dId : undefined,
+      dU:       typeof item.dU === "string" ? item.dU : undefined,
+    });
+  }
+
+  return { entries, edition };
+}
 
 /**
  * Fetches and parses a Softres.it raid's reserve list.
  * Results are cached in-memory for 5 minutes.
  */
 export async function fetchSoftresRaid(raidId: string): Promise<SoftresRaidData> {
-  // Check in-memory cache first
   const cached = responseCache.get(raidId);
   if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) {
     return cached.data;
   }
 
   const res = await fetch(`https://softres.it/api/raid/${raidId}`, {
-    headers: { Accept: "application/json" },
-    next: { revalidate: 300 }, // also use Next.js fetch cache
+    headers: {
+      Accept: "application/json",
+      "User-Agent": "PineappleLootXpress/1.0",
+    },
+    // Don't use Next.js fetch cache on top of our own — one TTL is enough
+    cache: "no-store",
   });
 
   if (!res.ok) {
     throw new Error(`Softres API error ${res.status} for raid ${raidId}`);
   }
 
-  const raw: SoftresEntry[] = await res.json();
+  const contentType = res.headers.get("content-type") ?? "";
+  if (!contentType.includes("application/json") && !contentType.includes("text/json")) {
+    throw new Error(`Softres API returned non-JSON content-type: ${contentType}`);
+  }
 
-  // Normalize entries and collect all item IDs
+  const rawJson: unknown = await res.json();
+  const { entries, edition } = parseSoftresResponse(rawJson);
+
   const itemIdSet = new Set<number>();
-  const entries: SoftresEntry[] = raw.map((entry) => {
-    entry.items.forEach((id) => itemIdSet.add(id));
-    return {
-      ...entry,
-      specName: SPEC_ID_MAP[entry.spec]?.spec ?? `Spec ${entry.spec}`,
-    };
-  });
+  for (const entry of entries) {
+    for (const id of entry.items) itemIdSet.add(id);
+  }
 
   const data: SoftresRaidData = {
     raidId,
+    edition,
     entries,
     itemIds: Array.from(itemIdSet),
   };
+
+  // Evict oldest entries if cache is full
+  if (responseCache.size >= MAX_CACHE_ENTRIES) {
+    const oldest = [...responseCache.entries()].sort((a, b) => a[1].fetchedAt - b[1].fetchedAt)[0];
+    if (oldest) responseCache.delete(oldest[0]);
+  }
 
   responseCache.set(raidId, { data, fetchedAt: Date.now() });
   return data;
 }
 
-/** Clears the in-memory cache for a specific raid (or all raids) */
+/** Clears the in-memory cache for a specific raid (or all). */
 export function clearSoftresCache(raidId?: string) {
-  if (raidId) {
-    responseCache.delete(raidId);
-  } else {
-    responseCache.clear();
+  if (raidId) responseCache.delete(raidId);
+  else responseCache.clear();
+}
+
+// ─── Concurrency-limited fetch helper ────────────────────────
+/** Run `tasks` with at most `limit` in flight at once. */
+async function pLimit<T>(tasks: (() => Promise<T>)[], limit: number): Promise<T[]> {
+  const results: T[] = new Array(tasks.length);
+  let idx = 0;
+
+  async function worker() {
+    while (idx < tasks.length) {
+      const i = idx++;
+      results[i] = await tasks[i]();
+    }
   }
+
+  await Promise.all(Array.from({ length: Math.min(limit, tasks.length) }, worker));
+  return results;
+}
+
+/** Fetch one item name from Wowhead with one retry on 429. Returns null on failure. */
+async function fetchItemName(id: string): Promise<{ id: string; name: string; icon: string | null } | null> {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetch(`https://${WOWHEAD_HOST}/tooltip/item/${id}`, {
+        headers: {
+          Accept: "application/json",
+          "User-Agent": "PineappleLootXpress/1.0",
+        },
+      });
+
+      if (res.status === 429) {
+        // Back off 2 seconds before retry
+        await new Promise((r) => setTimeout(r, 2000));
+        continue;
+      }
+
+      if (!res.ok) return null;
+
+      const ct = res.headers.get("content-type") ?? "";
+      if (!ct.includes("application/json") && !ct.includes("text/json")) return null;
+
+      const data = await res.json() as Record<string, unknown>;
+      const name = typeof data.name === "string" ? data.name : null;
+      const icon = typeof data.icon === "string" ? data.icon : null;
+
+      if (!name) return null;
+      return { id, name, icon };
+    } catch {
+      return null;
+    }
+  }
+  return null;
 }
 
 /**
- * Resolves item IDs to names using the DB ItemCache.
- * For any IDs not in the cache, fetches from Wowhead tooltip API and stores them.
- * Returns a map of itemId → itemName.
+ * Resolves item IDs → names using DB ItemCache.
+ * Fetches missing IDs from Wowhead (max 8 concurrent, retry on 429).
+ * Never caches failure/placeholder names.
  */
 export async function resolveItemNames(
   itemIds: number[]
@@ -99,9 +214,12 @@ export async function resolveItemNames(
 
   const idStrings = itemIds.map(String);
 
-  // Fetch from DB cache
+  // Load what's in DB — skip entries where name looks like a placeholder
   const cached = await prisma.itemCache.findMany({
-    where: { itemId: { in: idStrings } },
+    where: {
+      itemId: { in: idStrings },
+      NOT: { itemName: { startsWith: "Item " } },
+    },
   });
 
   const result: Record<string, string> = {};
@@ -112,33 +230,19 @@ export async function resolveItemNames(
     cachedIds.add(item.itemId);
   }
 
-  // Find IDs not yet cached
   const missing = idStrings.filter((id) => !cachedIds.has(id));
 
   if (missing.length > 0) {
-    // Fetch from Wowhead tooltip API in parallel (with a small concurrency limit)
-    const resolved = await Promise.all(
-      missing.map(async (id) => {
-        try {
-          const res = await fetch(`https://www.wowhead.com/tooltip/item/${id}`, {
-            headers: { Accept: "application/json" },
-          });
-          if (!res.ok) return { id, name: `Item ${id}` };
-          const data = await res.json();
-          return { id, name: data.name ?? `Item ${id}` };
-        } catch {
-          return { id, name: `Item ${id}` };
-        }
-      })
-    );
+    const tasks = missing.map((id) => () => fetchItemName(id));
+    const resolved = await pLimit(tasks, 8);
 
-    // Upsert into ItemCache and add to result
-    for (const { id, name } of resolved) {
-      result[id] = name;
+    for (const r of resolved) {
+      if (!r) continue; // don't cache failures
+      result[r.id] = r.name;
       await prisma.itemCache.upsert({
-        where: { itemId: id },
-        create: { itemId: id, itemName: name },
-        update: { itemName: name, cachedAt: new Date() },
+        where:  { itemId: r.id },
+        create: { itemId: r.id, itemName: r.name, iconName: r.icon },
+        update: { itemName: r.name, iconName: r.icon, cachedAt: new Date() },
       });
     }
   }

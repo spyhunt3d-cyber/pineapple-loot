@@ -1,9 +1,7 @@
 @import "tailwindcss";
 
-/* ─── WoW-themed design tokens ─────────────────────────────── */
-:root {
-  --background:       #0d0d10;
-  --foreground:       #e2e0d8;
+/* ─── Tailwind v4 theme: all design tokens as named utilities ── */
+@theme {
   --color-bg:         #0d0d10;
   --color-surface:    #16171f;
   --color-surface-2:  #1e1f2a;
@@ -12,27 +10,34 @@
   --color-gold-light: #e8c97a;
   --color-text:       #e2e0d8;
   --color-text-muted: #8a8898;
+
+  /* background/foreground aliases for Next.js boilerplate */
+  --color-background: #0d0d10;
+  --color-foreground: #e2e0d8;
+
+  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "Fira Code", monospace;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-}
-
+/* ─── Base ──────────────────────────────────────────────────── */
 body {
   background-color: var(--color-bg);
   color: var(--color-text);
-  font-family: system-ui, sans-serif;
+  font-family: var(--font-sans);
   min-height: 100vh;
 }
 
-/* Scrollbar styling to match dark theme */
-::-webkit-scrollbar { width: 6px; height: 6px; }
+/* ─── Scrollbars ────────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--color-bg); }
 ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--color-gold); }
 
-/* WoW class color utility classes — applied to player name text */
+/* Hide scrollbar but keep scrollable (for mobile nav strips) */
+.scrollbar-none { scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
+
+/* ─── WoW class color utilities ─────────────────────────────── */
 .class-death-knight  { color: #C41E3A; }
 .class-demon-hunter  { color: #A330C9; }
 .class-druid         { color: #FF7C0A; }
@@ -46,3 +51,392 @@ body {
 .class-shaman        { color: #0070DD; }
 .class-warlock       { color: #8788EE; }
 .class-warrior       { color: #C69B3A; }
+
+/* ─── Shared component patterns ─────────────────────────────── */
+
+/* Gold outline button */
+.btn-gold {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+  border: 1px solid color-mix(in srgb, var(--color-gold) 50%, transparent);
+  background-color: color-mix(in srgb, var(--color-gold) 10%, transparent);
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-gold);
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.btn-gold:hover {
+  background-color: color-mix(in srgb, var(--color-gold) 20%, transparent);
+  border-color: var(--color-gold);
+}
+.btn-gold:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Gold solid button */
+.btn-gold-solid {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+  border: 1px solid transparent;
+  background-color: var(--color-gold);
+  padding: 0.5rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #000;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  white-space: nowrap;
+}
+.btn-gold-solid:hover { background-color: var(--color-gold-light); }
+.btn-gold-solid:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Neutral secondary button */
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface-2);
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.btn-secondary:hover { background-color: var(--color-surface); border-color: var(--color-text-muted); }
+.btn-secondary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Input / Select / Textarea */
+.field {
+  width: 100%;
+  border-radius: 0.375rem;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface-2);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--color-text);
+  outline: none;
+  transition: box-shadow 0.15s, border-color 0.15s;
+  appearance: none;
+}
+.field::placeholder { color: var(--color-text-muted); }
+.field:focus {
+  border-color: color-mix(in srgb, var(--color-gold) 60%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-gold) 40%, transparent);
+}
+
+/* Data table */
+.data-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border);
+}
+.data-table {
+  width: 100%;
+  font-size: 0.875rem;
+  border-collapse: collapse;
+}
+.data-table thead tr {
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-surface-2);
+}
+.data-table thead th {
+  padding: 0.625rem 1rem;
+  text-align: left;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.data-table thead th.text-right { text-align: right; }
+.data-table tbody tr {
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  transition: background-color 0.1s;
+}
+.data-table tbody tr:last-child { border-bottom: none; }
+.data-table tbody tr:hover { background-color: var(--color-surface-2); }
+.data-table tbody td {
+  padding: 0.75rem 1rem;
+  color: var(--color-text);
+}
+.data-table tbody td.muted { color: var(--color-text-muted); }
+.data-table tbody td.text-right { text-align: right; }
+
+/* Stat card */
+.stat-card {
+  display: block;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  padding: 1.25rem;
+  transition: border-color 0.15s;
+  text-decoration: none;
+}
+.stat-card:hover {
+  border-color: color-mix(in srgb, var(--color-gold) 40%, transparent);
+}
+.stat-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--color-text-muted);
+}
+.stat-value {
+  margin-top: 0.5rem;
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--color-gold);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Quick action card */
+.action-card {
+  display: block;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface-2);
+  padding: 1rem 1.25rem;
+  transition: border-color 0.15s, background-color 0.15s;
+  text-decoration: none;
+}
+.action-card:hover {
+  border-color: color-mix(in srgb, var(--color-gold) 50%, transparent);
+  background-color: color-mix(in srgb, var(--color-gold) 4%, var(--color-surface-2));
+}
+.action-title {
+  font-weight: 500;
+  color: var(--color-text);
+  font-size: 0.875rem;
+}
+.action-desc {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+/* Empty state */
+.empty-state {
+  border-radius: 0.5rem;
+  border: 1px dashed var(--color-border);
+  padding: 4rem 2rem;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+/* Section label / subheading */
+.section-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+}
+
+/* Wowhead item link */
+.item-link {
+  color: var(--color-gold-light);
+  text-decoration: none;
+  transition: color 0.1s;
+}
+.item-link:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+/* Page header */
+.page-header { margin-bottom: 1.5rem; }
+@media (min-width: 640px) { .page-header { margin-bottom: 2rem; } }
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-gold);
+  line-height: 1.2;
+}
+@media (min-width: 640px) { .page-title { font-size: 1.75rem; } }
+.page-subtitle {
+  margin-top: 0.375rem;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+/* ── Tab / filter toggle — shared style ─────────── */
+/* Use .tab-bar on the container, .tab on each button */
+.tab-bar {
+  display: flex;
+  gap: 0.125rem;
+  padding: 0.25rem;
+  border-radius: 0.625rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+}
+.tab {
+  flex: 1;
+  padding: 0.5rem 0.875rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+  cursor: pointer;
+  white-space: nowrap;
+  text-align: center;
+}
+.tab:hover { color: var(--color-text); background: var(--color-surface); }
+.tab.active {
+  background: var(--color-gold);
+  color: var(--color-bg);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.35);
+  font-weight: 600;
+}
+
+/* Underline-style tabs (e.g. Night 1 / Night 2, filter tabs) */
+.tab-underline-bar {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.tab-underline {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  color: var(--color-text-muted);
+  transition: color 0.15s, border-color 0.15s;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tab-underline:hover { color: var(--color-text); border-bottom-color: var(--color-gold)/40; }
+.tab-underline.active { color: var(--color-gold); border-bottom-color: var(--color-gold); }
+.tab-underline:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ── Pill tab — for raid/instance selection tabs ─── */
+.btn-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  padding: 0.375rem 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.btn-tab:hover {
+  background: color-mix(in srgb, var(--color-gold) 8%, transparent);
+  border-color: color-mix(in srgb, var(--color-gold) 40%, transparent);
+  color: var(--color-text);
+}
+.btn-tab.active {
+  background: color-mix(in srgb, var(--color-gold) 18%, transparent);
+  border-color: var(--color-gold);
+  color: var(--color-gold);
+  font-weight: 600;
+}
+
+/* ── Ghost utility button — subtle action (Fix Types, Import, etc.) ── */
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.btn-ghost:hover {
+  background: color-mix(in srgb, var(--color-gold) 8%, transparent);
+  border-color: color-mix(in srgb, var(--color-gold) 50%, transparent);
+  color: var(--color-gold);
+}
+.btn-ghost:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-ghost:disabled:hover { background: transparent; border-color: var(--color-border); color: var(--color-text-muted); }
+
+/* ── Danger ghost button — destructive actions (Remove Tier, Delete) ── */
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+  border: 1px solid color-mix(in srgb, #f87171 30%, transparent);
+  background: transparent;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: color-mix(in srgb, #f87171 70%, transparent);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.btn-danger:hover {
+  background: color-mix(in srgb, #f87171 8%, transparent);
+  border-color: color-mix(in srgb, #f87171 70%, transparent);
+  color: #f87171;
+}
+.btn-danger:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Dashed add button ── */
+.btn-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+  border: 1px dashed var(--color-border);
+  background: transparent;
+  padding: 0.375rem 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.btn-add:hover {
+  background: color-mix(in srgb, var(--color-gold) 6%, transparent);
+  border-color: color-mix(in srgb, var(--color-gold) 50%, transparent);
+  color: var(--color-gold);
+}
+
+/* ── Hide number input spinners ── */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance: textfield; }
+
+/* ── Minimum touch target for interactive elements ── */
+@media (max-width: 767px) {
+  .btn-gold, .btn-gold-solid, .btn-secondary {
+    min-height: 2.75rem;
+    padding-top: 0.625rem;
+    padding-bottom: 0.625rem;
+  }
+  .field {
+    min-height: 2.75rem;
+    font-size: 1rem; /* prevent iOS zoom on input focus */
+  }
+  .tab { min-height: 2.5rem; }
+  .tab-underline { min-height: 2.75rem; padding-left: 0.75rem; padding-right: 0.75rem; }
+}

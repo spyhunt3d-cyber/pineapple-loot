@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Raid, RaidWeek } from "@prisma/client";
 import { formatDate } from "@/lib/utils";
-import { CLASS_COLORS } from "@/lib/wow-constants";
+import { CLASS_COLORS, getWowheadItemUrl, getWowheadDataAttr } from "@/lib/wow-constants";
 import { getRollRangeColorClass, type RollRange } from "@/lib/roll-calculator";
 
 type RaidWithWeek = RaidWeek & { raids: Raid[] };
@@ -16,20 +16,29 @@ interface ReserveWithRange {
   weeksConsecutive: number;
   rollRange: RollRange;
   player: { charName: string; class: string | null; spec: string | null };
-  raid: { night: number };
+  raid: { night: number; instance: string };
 }
 
 interface Props {
   weeks: RaidWithWeek[];
 }
 
+const ROLL_RANGE_LABELS = ["1–100", "20–120", "50–150", "90–190", "140–240", "200–300"];
+const ROLL_RANGE_COLORS = [
+  "bg-emerald-900/50 text-emerald-300 border-emerald-700",
+  "bg-green-900/50 text-green-300 border-green-700",
+  "bg-yellow-900/50 text-yellow-300 border-yellow-700",
+  "bg-orange-900/50 text-orange-300 border-orange-700",
+  "bg-red-900/50 text-red-300 border-red-700",
+  "bg-amber-900/50 text-amber-300 border-amber-600 font-bold",
+];
+
 export function SoftReservesClient({ weeks }: Props) {
-  const [selectedWeekId, setSelectedWeekId] = useState<number | null>(
-    weeks[0]?.id ?? null
-  );
-  const [activeNight, setActiveNight] = useState<1 | 2>(1);
-  const [reserves, setReserves] = useState<ReserveWithRange[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [selectedWeekId, setSelectedWeekId] = useState<number | null>(weeks[0]?.id ?? null);
+  const [activeNight, setActiveNight]         = useState<1 | 2>(1);
+  const [reserves, setReserves]               = useState<ReserveWithRange[]>([]);
+  const [loading, setLoading]                 = useState(false);
+  const [search, setSearch]                   = useState("");
 
   const selectedWeek = weeks.find((w) => w.id === selectedWeekId);
 
@@ -48,141 +57,220 @@ export function SoftReservesClient({ weeks }: Props) {
     if (selectedWeekId) loadReserves(selectedWeekId);
   }, [selectedWeekId, loadReserves]);
 
-  // Filter reserves by night
+  const hasNight = (night: 1 | 2) => selectedWeek?.raids.some((r) => r.night === night) ?? false;
+
   const nightReserves = reserves.filter((r) => r.raid.night === activeNight);
 
-  // Group by player name for display
-  const byPlayer = nightReserves.reduce<Record<string, ReserveWithRange[]>>((acc, r) => {
-    const key = r.player.charName;
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(r);
-    return acc;
-  }, {});
+  // Group by boss → item
+  const byBoss = nightReserves.reduce<Record<string, Record<string, ReserveWithRange[]>>>(
+    (acc, r) => {
+      const boss = r.bossName || "Unknown Boss";
+      const key  = `${r.itemId}::${r.itemName}`;
+      if (!acc[boss]) acc[boss] = {};
+      if (!acc[boss][key]) acc[boss][key] = [];
+      acc[boss][key].push(r);
+      return acc;
+    },
+    {}
+  );
 
-  const hasNight = (night: 1 | 2) =>
-    selectedWeek?.raids.some((r) => r.night === night) ?? false;
+  // Sort players within each item by weeksConsecutive desc
+  Object.values(byBoss).forEach((items) =>
+    Object.values(items).forEach((players) =>
+      players.sort((a, b) => b.weeksConsecutive - a.weeksConsecutive)
+    )
+  );
+
+  const filteredBosses = Object.entries(byBoss).filter(([boss, items]) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      boss.toLowerCase().includes(q) ||
+      Object.entries(items).some(
+        ([key, players]) =>
+          key.toLowerCase().includes(q) ||
+          players.some((p) => p.player.charName.toLowerCase().includes(q))
+      )
+    );
+  });
+
+  const totalItems   = Object.values(byBoss).reduce((s, items) => s + Object.keys(items).length, 0);
+  const totalPlayers = new Set(nightReserves.map((r) => r.player.charName)).size;
 
   return (
     <div className="space-y-6">
-      {/* Week selector */}
-      <div>
-        <label className="block text-sm text-[--color-text-muted] mb-1">
-          Raid Week
-        </label>
-        <select
-          value={selectedWeekId ?? ""}
-          onChange={(e) => setSelectedWeekId(Number(e.target.value))}
-          className="rounded-md border border-[--color-border] bg-[--color-surface-2] px-3 py-2 text-sm text-[--color-text] focus:outline-none focus:ring-1 focus:ring-[--color-gold]"
-        >
-          {weeks.map((week) => (
-            <option key={week.id} value={week.id}>
-              Week of {formatDate(week.weekStart)}
-              {week.raids.length > 0
-                ? ` (${week.raids.length} night${week.raids.length > 1 ? "s" : ""})`
-                : ""}
-            </option>
-          ))}
-        </select>
+      {/* Controls row */}
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-semibold uppercase tracking-wide text-[--color-text-muted]">
+            Raid Week
+          </label>
+          <select
+            value={selectedWeekId ?? ""}
+            onChange={(e) => setSelectedWeekId(Number(e.target.value))}
+            className="field w-full sm:w-auto sm:min-w-56"
+          >
+            {weeks.map((week) => (
+              <option key={week.id} value={week.id}>
+                Week of {formatDate(week.weekStart)}
+                {week.raids.length > 0
+                  ? ` (${week.raids.length} night${week.raids.length > 1 ? "s" : ""})`
+                  : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex flex-col gap-1 flex-1 min-w-40">
+          <label className="text-xs font-semibold uppercase tracking-wide text-[--color-text-muted]">
+            Search item / player / boss
+          </label>
+          <input
+            className="field"
+            placeholder="e.g. cloak, feckful, garrosh…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
       </div>
 
       {/* Night tabs */}
-      <div className="flex gap-1 border-b border-[--color-border]">
+      <div className="tab-underline-bar">
         {([1, 2] as const).map((night) => (
           <button
             key={night}
             onClick={() => setActiveNight(night)}
             disabled={!hasNight(night)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
-              activeNight === night
-                ? "border-[--color-gold] text-[--color-gold]"
-                : "border-transparent text-[--color-text-muted] hover:text-[--color-text] disabled:opacity-30"
-            }`}
+            className={`tab-underline ${activeNight === night ? "active" : ""}`}
           >
             Night {night}
           </button>
         ))}
+
+        {!loading && nightReserves.length > 0 && (
+          <span className="ml-auto self-center text-xs text-[--color-text-muted] pr-1">
+            {totalItems} items · {totalPlayers} players
+          </span>
+        )}
       </div>
 
-      {/* Table */}
+      {/* Roll range legend */}
+      <div className="flex flex-wrap gap-1.5">
+        {ROLL_RANGE_LABELS.map((label, i) => (
+          <span key={i} className={`rounded border px-2 py-0.5 text-xs ${ROLL_RANGE_COLORS[i]}`}>
+            Wk {i + 1}: {label}
+          </span>
+        ))}
+      </div>
+
       {loading ? (
-        <div className="py-12 text-center text-[--color-text-muted] animate-pulse">
+        <div className="py-12 text-center text-[--color-text-muted] animate-pulse text-sm">
           Loading reserves…
         </div>
-      ) : Object.keys(byPlayer).length === 0 ? (
-        <div className="py-12 text-center text-[--color-text-muted]">
-          No reserves found for this night.
+      ) : filteredBosses.length === 0 ? (
+        <div className="empty-state">
+          {search ? "No matches." : "No reserves for this night."}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-[--color-border]">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[--color-border] bg-[--color-surface-2]">
-                <th className="px-4 py-3 text-left font-medium text-[--color-text-muted]">Player</th>
-                <th className="px-4 py-3 text-left font-medium text-[--color-text-muted]">Item</th>
-                <th className="px-4 py-3 text-left font-medium text-[--color-text-muted] w-24">Weeks</th>
-                <th className="px-4 py-3 text-left font-medium text-[--color-text-muted] w-32">Roll Range</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[--color-border]">
-              {Object.entries(byPlayer).flatMap(([charName, playerReserves]) =>
-                playerReserves.map((reserve, i) => {
-                  const classColor = CLASS_COLORS[reserve.player.class ?? ""] ?? "#e2e0d8";
-                  const rangeColor = getRollRangeColorClass(reserve.rollRange.week);
-                  return (
-                    <tr
-                      key={reserve.id}
-                      className="bg-[--color-surface] hover:bg-[--color-surface-2] transition-colors"
-                    >
-                      {/* Player name — only show on first reserve row */}
-                      <td className="px-4 py-3 font-medium" style={{ color: classColor }}>
-                        {i === 0 ? (
-                          <span>
-                            {charName}
-                            {reserve.player.spec && (
-                              <span className="ml-1 text-xs text-[--color-text-muted]">
-                                ({reserve.player.spec})
-                              </span>
-                            )}
-                          </span>
-                        ) : (
-                          <span className="opacity-0 select-none">{charName}</span>
-                        )}
-                      </td>
+        <div className="space-y-8">
+          {filteredBosses.map(([boss, items]) => (
+            <div key={boss}>
+              {/* Boss header */}
+              <h2 className="text-sm font-bold text-[--color-gold] border-b border-[--color-border] pb-2 mb-3 flex items-center gap-2">
+                {boss}
+                <span className="text-xs font-normal text-[--color-text-muted]">
+                  {Object.keys(items).length} item{Object.keys(items).length !== 1 ? "s" : ""}
+                </span>
+              </h2>
 
-                      {/* Item name with Wowhead link */}
-                      <td className="px-4 py-3">
+              <div className="space-y-3">
+                {Object.entries(items).map(([itemKey, players]) => {
+                  const [itemId, itemName] = itemKey.split("::");
+                  const topStack = players[0]?.weeksConsecutive ?? 1;
+                  return (
+                    <div
+                      key={itemKey}
+                      className="bg-[--color-surface] border border-[--color-border] rounded-lg overflow-hidden"
+                    >
+                      {/* Item header row */}
+                      <div className="flex items-center gap-3 px-4 py-2.5 border-b border-[--color-border] bg-[--color-surface-2]">
                         <a
-                          href={`https://www.wowhead.com/item=${reserve.itemId}`}
-                          data-wowhead={`item=${reserve.itemId}`}
+                          href={getWowheadItemUrl(itemId, players[0]?.raid.instance)}
+                          data-wowhead={getWowheadDataAttr(itemId, players[0]?.raid.instance)}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-[--color-gold-light] hover:underline"
+                          className="item-link font-semibold text-sm flex-1"
                         >
-                          {reserve.itemName}
+                          {itemName}
                         </a>
-                      </td>
-
-                      {/* Consecutive weeks */}
-                      <td className="px-4 py-3 text-[--color-text-muted]">
-                        {reserve.weeksConsecutive === 6 ? (
-                          <span className="text-amber-400 font-medium">6 (max)</span>
-                        ) : (
-                          reserve.weeksConsecutive
-                        )}
-                      </td>
-
-                      {/* Roll range badge */}
-                      <td className="px-4 py-3">
-                        <span className={`rounded border px-2 py-0.5 text-xs font-mono ${rangeColor}`}>
-                          {reserve.rollRange.label}
+                        <span className="text-xs text-[--color-text-muted]">
+                          {players.length} SR{players.length !== 1 ? "s" : ""}
                         </span>
-                      </td>
-                    </tr>
+                        {topStack >= 3 && (
+                          <span className={`text-xs rounded border px-1.5 py-0.5 ${ROLL_RANGE_COLORS[topStack - 1]}`}>
+                            top: wk {topStack}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Players list */}
+                      <div className="divide-y divide-[--color-border]">
+                        {players.map((r) => {
+                          const classColor = CLASS_COLORS[r.player.class ?? ""] ?? "#e2e0d8";
+                          const rangeColor = getRollRangeColorClass(r.rollRange.week);
+                          return (
+                            <div
+                              key={r.id}
+                              className="flex items-center gap-3 px-4 py-2 text-sm"
+                            >
+                              {/* Rank dot — highlights top stacker(s) */}
+                              <span
+                                className={`w-2 h-2 rounded-full shrink-0 ${
+                                  r.weeksConsecutive === topStack && topStack > 1
+                                    ? "bg-[--color-gold]"
+                                    : "bg-[--color-border]"
+                                }`}
+                              />
+
+                              {/* Player name */}
+                              <span
+                                className="font-medium w-28 shrink-0 truncate capitalize"
+                                style={{ color: classColor }}
+                              >
+                                {r.player.charName}
+                              </span>
+
+                              {/* Class / spec */}
+                              <span className="text-xs flex-1 truncate" style={{ color: classColor }}>
+                                {r.player.class ?? ""}
+                                {r.player.spec ? <span className="text-[--color-text-muted]"> · {r.player.spec}</span> : ""}
+                              </span>
+
+                              {/* Weeks stacked */}
+                              <span className="text-xs text-[--color-text-muted] w-14 text-right shrink-0">
+                                {r.weeksConsecutive === 6 ? (
+                                  <span className="text-amber-400 font-medium">6 wks ★</span>
+                                ) : (
+                                  `${r.weeksConsecutive} wk${r.weeksConsecutive !== 1 ? "s" : ""}`
+                                )}
+                              </span>
+
+                              {/* Roll range badge */}
+                              <span
+                                className={`rounded border px-2 py-0.5 text-xs font-mono w-20 text-center shrink-0 ${rangeColor}`}
+                              >
+                                {r.rollRange.label}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   );
-                })
-              )}
-            </tbody>
-          </table>
+                })}
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

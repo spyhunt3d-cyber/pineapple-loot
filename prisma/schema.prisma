@@ -32,6 +32,8 @@ model Raid {
   week         RaidWeek      @relation(fields: [weekId], references: [id])
   lootWins     LootWin[]
   softReserves SoftReserve[]
+
+  @@index([weekId])
 }
 
 // ─── Player ───────────────────────────────────────────────────
@@ -43,6 +45,8 @@ model Player {
   class    String? // "Druid", "Warrior", "Mage", etc.
   spec     String? // "Balance", "Arms", "Fire", etc.
   role     String? // "tank" | "healer" | "dps"
+  team     String? // e.g. "Main", "Alt", "Bench"
+  notes    String?
   active   Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -59,10 +63,11 @@ model LootWin {
   id       Int     @id @default(autoincrement())
   playerId Int
   raidId   Int
-  itemId   String // WoW item ID as string
+  itemId   String  // WoW item ID as string
   itemName String
   bossName String
   winType  WinType @default(MS)
+  gargulId String? // Unique award ID from Gargul CSV — used for deduplication on re-import
 
   createdAt DateTime @default(now())
 
@@ -72,13 +77,16 @@ model LootWin {
   @@index([playerId])
   @@index([raidId])
   @@index([itemId])
+  @@index([gargulId])
 }
 
 enum WinType {
-  PRIO // Won via loot priority
-  SR // Won via soft reserve
-  MS // Won as main spec roll
-  OS // Won as off spec roll
+  PRIO  // Won via loot priority
+  SR    // Won via soft reserve
+  MS    // Won as main spec roll
+  OS    // Won as off spec roll
+  DE    // Disenchanted
+  TMOG  // Transmog / cosmetic roll
 }
 
 // ─── Soft Reserve ─────────────────────────────────────────────
@@ -124,6 +132,45 @@ model LootPriority {
   @@unique([itemId, class, spec])
   @@index([itemId])
   @@index([class, spec])
+}
+
+// ─── Raid Loot Sheet ──────────────────────────────────────────
+// Rich per-item loot priority spreadsheet, one row per item per instance.
+// priorityChain: JSON — ordered array of priority tiers, each tier is an
+//   array of { class, spec } entries. Same tier = equal prio (=), next
+//   tier = lower prio (>). spec is "MS" | "OS" | "*".
+//   e.g. [[{class:"Death Knight",spec:"MS"},{class:"Warrior",spec:"MS"}],
+//          [{class:"*",spec:"OS"}]]
+//   renders as "DK MS = Warrior MS > All OS"
+// stats: JSON flags — { str, agi, sta, crit, hit, mastery, haste, exp, sockets }
+model RaidLoot {
+  id             Int     @id @default(autoincrement())
+  itemId         String
+  itemName       String
+  instance       String
+  bossName       String
+  bossOrder      Int     @default(0)
+  ilvl           Int?
+  itemSlot       String?
+  itemType       String?
+  stats          Json?
+  priorityChain  Json?
+  notes          String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([itemId, instance])
+  @@index([instance])
+  @@index([bossName])
+}
+
+// ─── App Settings ─────────────────────────────────────────────
+// Generic key-value store for server-side config (e.g. OAuth tokens)
+model AppSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
 }
 
 // ─── Item Cache ───────────────────────────────────────────────

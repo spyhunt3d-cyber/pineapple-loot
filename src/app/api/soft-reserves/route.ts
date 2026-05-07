@@ -17,12 +17,18 @@ export async function GET(req: NextRequest) {
   const raidId = searchParams.get("raidId");
   const playerId = searchParams.get("playerId");
 
+  // Require at least one filter to prevent full-table dumps
+  if (!weekId && !raidId && !playerId) {
+    return NextResponse.json({ reserves: [] });
+  }
+
   const reserves = await prisma.softReserve.findMany({
     where: {
-      ...(weekId ? { weekId: parseInt(weekId, 10) } : {}),
-      ...(raidId ? { raidId: parseInt(raidId, 10) } : {}),
+      ...(weekId   ? { weekId:   parseInt(weekId,   10) } : {}),
+      ...(raidId   ? { raidId:   parseInt(raidId,   10) } : {}),
       ...(playerId ? { playerId: parseInt(playerId, 10) } : {}),
     },
+    take: 500,
     include: {
       player: true,
       raid: true,
