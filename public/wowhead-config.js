@@ -1,24 +1,67 @@
-// Wowhead tooltip configuration — loaded before the tooltip script
-// Enables colored item links, icons, and renamed links in tooltips
 var whTooltips = { colorLinks: true, iconizeLinks: true, renameLinks: true };
 
-// Reposition Wowhead tooltip if it overflows the right edge of the viewport
+// Reposition Wowhead tooltip near the cursor instead of using its default (often off-screen) position
 (function () {
-  var observer = new MutationObserver(function () {
+  var mouseX = 0, mouseY = 0;
+
+  document.addEventListener("mousemove", function (e) {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+  }, true);
+
+  function positionTooltip() {
     var tip = document.getElementById("wowhead-tooltip");
-    if (!tip || tip.style.display === "none" || !tip.style.left) return;
-    var rect = tip.getBoundingClientRect();
+    if (!tip) return;
+    var vis = tip.style.visibility;
+    var disp = tip.style.display;
+    if (vis === "hidden" || disp === "none") return;
+
+    var tipWidth  = tip.offsetWidth  || 320;
+    var tipHeight = tip.offsetHeight || 200;
     var vw = window.innerWidth;
-    if (rect.right > vw - 10) {
-      var overflow = rect.right - vw + 20;
-      var currentLeft = parseInt(tip.style.left, 10) || 0;
-      tip.style.left = Math.max(0, currentLeft - overflow) + "px";
+    var vh = window.innerHeight;
+    var offset = 16;
+
+    var x = mouseX + offset;
+    var y = mouseY + offset;
+
+    // Flip left if overflowing right edge
+    if (x + tipWidth > vw - 8) {
+      x = mouseX - tipWidth - offset;
     }
-  });
-  document.addEventListener("DOMContentLoaded", function () {
+    // Clamp to viewport edges
+    if (x < 8) x = 8;
+    if (y + tipHeight > vh - 8) {
+      y = mouseY - tipHeight - offset;
+    }
+    if (y < 8) y = 8;
+
+    // Convert to page coords (add scroll)
+    tip.style.left = (x + window.scrollX) + "px";
+    tip.style.top  = (y + window.scrollY) + "px";
+  }
+
+  var observer = new MutationObserver(positionTooltip);
+
+  function attachObserver() {
     var tip = document.getElementById("wowhead-tooltip");
-    if (tip) observer.observe(tip, { attributes: true, attributeFilter: ["style"] });
-    // Also observe body for when tooltip is first injected
-    observer.observe(document.body, { childList: true, subtree: false });
-  });
+    if (tip) {
+      observer.observe(tip, { attributes: true, attributeFilter: ["style"] });
+    } else {
+      var bodyObserver = new MutationObserver(function (_, obs) {
+        var t = document.getElementById("wowhead-tooltip");
+        if (t) {
+          obs.disconnect();
+          observer.observe(t, { attributes: true, attributeFilter: ["style"] });
+        }
+      });
+      bodyObserver.observe(document.body, { childList: true, subtree: true });
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", attachObserver);
+  } else {
+    attachObserver();
+  }
 })();
