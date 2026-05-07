@@ -1,0 +1,137 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Raid Week ────────────────────────────────────────────────
+// Represents the Mon-Sun window for a pair of raid nights
+model RaidWeek {
+  id        Int      @id @default(autoincrement())
+  weekStart DateTime @unique // Monday 00:00 UTC of the raid week
+  createdAt DateTime @default(now())
+
+  raids        Raid[]
+  softReserves SoftReserve[]
+}
+
+// ─── Raid (single night) ──────────────────────────────────────
+// One Softres.it raid = one night (Night 1 or Night 2 per week)
+model Raid {
+  id        Int      @id @default(autoincrement())
+  softresId String   @unique // e.g. "tu8jdg" from softres.it URL
+  instance  String // "Siege of Orgrimmar", "Icecrown Citadel", etc.
+  raidDate  DateTime
+  night     Int // 1 or 2 (two nights per week)
+  weekId    Int
+  createdAt DateTime @default(now())
+
+  week         RaidWeek      @relation(fields: [weekId], references: [id])
+  lootWins     LootWin[]
+  softReserves SoftReserve[]
+}
+
+// ─── Player ───────────────────────────────────────────────────
+// One row per character (charName + server is the unique key)
+model Player {
+  id       Int     @id @default(autoincrement())
+  charName String // e.g. "feckful" (no caps in WoW names)
+  server   String // e.g. "galakrond" — realm name
+  class    String? // "Druid", "Warrior", "Mage", etc.
+  spec     String? // "Balance", "Arms", "Fire", etc.
+  role     String? // "tank" | "healer" | "dps"
+  active   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([charName, server])
+
+  lootWins     LootWin[]
+  softReserves SoftReserve[]
+}
+
+// ─── Loot Win ─────────────────────────────────────────────────
+// Records each item a player has won in a raid
+model LootWin {
+  id       Int     @id @default(autoincrement())
+  playerId Int
+  raidId   Int
+  itemId   String // WoW item ID as string
+  itemName String
+  bossName String
+  winType  WinType @default(MS)
+
+  createdAt DateTime @default(now())
+
+  player Player @relation(fields: [playerId], references: [id])
+  raid   Raid   @relation(fields: [raidId], references: [id])
+
+  @@index([playerId])
+  @@index([raidId])
+  @@index([itemId])
+}
+
+enum WinType {
+  PRIO // Won via loot priority
+  SR // Won via soft reserve
+  MS // Won as main spec roll
+  OS // Won as off spec roll
+}
+
+// ─── Soft Reserve ─────────────────────────────────────────────
+// One row per player per item per week. weeksConsecutive is
+// auto-computed when a raid is added to a RaidWeek.
+model SoftReserve {
+  id               Int      @id @default(autoincrement())
+  playerId         Int
+  raidId           Int // which specific night this reserve is for
+  weekId           Int // denormalized for fast week-level queries
+  itemId           String
+  itemName         String
+  bossName         String
+  weeksConsecutive Int      @default(1) // 1–6, drives roll range calc
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  player Player   @relation(fields: [playerId], references: [id])
+  raid   Raid     @relation(fields: [raidId], references: [id])
+  week   RaidWeek @relation(fields: [weekId], references: [id])
+
+  @@unique([playerId, weekId, itemId])
+  @@index([weekId])
+  @@index([itemId])
+}
+
+// ─── Loot Priority ────────────────────────────────────────────
+// Defines which class/spec has priority on each item, and at what tier.
+// tier 1 = highest priority (BiS), 2 = good upgrade, 3 = situational
+model LootPriority {
+  id           Int    @id @default(autoincrement())
+  itemId       String
+  itemName     String
+  instance     String // raid tier context, e.g. "Siege of Orgrimmar"
+  bossName     String
+  class        String // "Druid" — use "*" for all classes
+  spec         String // "Balance" — use "*" for all specs of that class
+  priorityTier Int // 1 (highest) | 2 | 3
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([itemId, class, spec])
+  @@index([itemId])
+  @@index([class, spec])
+}
+
+// ─── Item Cache ───────────────────────────────────────────────
+// Caches WoW item name lookups (from Wowhead) so we don't spam
+// the tooltip API on every page load.
+model ItemCache {
+  itemId   String   @id
+  itemName String
+  iconName String? // Wowhead icon slug for displaying item icons
+  cachedAt DateTime @default(now())
+}

@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+/* ─── WoW-themed design tokens ─────────────────────────────── */
+:root {
+  --background:       #0d0d10;
+  --foreground:       #e2e0d8;
+  --color-bg:         #0d0d10;
+  --color-surface:    #16171f;
+  --color-surface-2:  #1e1f2a;
+  --color-border:     #2e2f3e;
+  --color-gold:       #c8a55a;
+  --color-gold-light: #e8c97a;
+  --color-text:       #e2e0d8;
+  --color-text-muted: #8a8898;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+/* Scrollbar styling to match dark theme */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--color-bg); }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-gold); }
+
+/* WoW class color utility classes — applied to player name text */
+.class-death-knight  { color: #C41E3A; }
+.class-demon-hunter  { color: #A330C9; }
+.class-druid         { color: #FF7C0A; }
+.class-evoker        { color: #33937F; }
+.class-hunter        { color: #AAD372; }
+.class-mage          { color: #3FC7EB; }
+.class-monk          { color: #00FF98; }
+.class-paladin       { color: #F48CBA; }
+.class-priest        { color: #DDDDDD; }
+.class-rogue         { color: #FFF468; }
+.class-shaman        { color: #0070DD; }
+.class-warlock       { color: #8788EE; }
+.class-warrior       { color: #C69B3A; }

@@ -1,0 +1,86 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
+
+const NAV_LINKS = [
+  { href: "/loot-table",    label: "Loot Table" },
+  { href: "/loot-priority", label: "Priority" },
+  { href: "/soft-reserves", label: "Soft Reserves" },
+  { href: "/players",       label: "Players" },
+];
+
+export function NavBar() {
+  const pathname = usePathname();
+
+  return (
+    <header className="sticky top-0 z-50 border-b border-[--color-border] bg-[--color-surface]/95 backdrop-blur-sm">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between">
+          {/* Logo / Guild Name */}
+          <Link href="/" className="flex items-center gap-2">
+            <span className="text-lg font-bold tracking-wide text-[--color-gold]">
+              🍍 Pineapple Loot Xpress
+            </span>
+          </Link>
+
+          {/* Main nav links */}
+          <nav className="hidden md:flex items-center gap-1">
+            {NAV_LINKS.map(({ href, label }) => {
+              const active = pathname.startsWith(href);
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className={cn(
+                    "px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                    active
+                      ? "bg-[--color-surface-2] text-[--color-gold]"
+                      : "text-[--color-text-muted] hover:text-[--color-text] hover:bg-[--color-surface-2]"
+                  )}
+                >
+                  {label}
+                </Link>
+              );
+            })}
+          </nav>
+
+          {/* Admin link */}
+          <Link
+            href="/admin"
+            className={cn(
+              "px-3 py-1.5 rounded border text-xs font-medium transition-colors",
+              pathname.startsWith("/admin")
+                ? "border-[--color-gold] text-[--color-gold] bg-[--color-gold]/10"
+                : "border-[--color-border] text-[--color-text-muted] hover:border-[--color-gold]/50 hover:text-[--color-gold]"
+            )}
+          >
+            ⚙ Admin
+          </Link>
+        </div>
+
+        {/* Mobile nav */}
+        <nav className="flex md:hidden gap-1 pb-2 overflow-x-auto">
+          {NAV_LINKS.map(({ href, label }) => {
+            const active = pathname.startsWith(href);
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={cn(
+                  "px-3 py-1.5 rounded-md text-sm whitespace-nowrap transition-colors",
+                  active
+                    ? "bg-[--color-surface-2] text-[--color-gold]"
+                    : "text-[--color-text-muted] hover:text-[--color-text]"
+                )}
+              >
+                {label}
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
+    </header>
+  );
+}
