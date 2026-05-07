@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Raid, RaidWeek } from "@prisma/client";
 import { formatDate } from "@/lib/utils";
 import { CLASS_COLORS, getWowheadItemUrl, getWowheadDataAttr } from "@/lib/wow-constants";
@@ -31,6 +31,16 @@ export function LootTableClient({ raids }: Props) {
   const [data, setData] = useState<SoftresResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Re-init Wowhead tooltips after data renders into DOM
+  useEffect(() => {
+    if (!data) return;
+    const id = setTimeout(() => {
+      const wh = (window as unknown as Record<string, unknown>)["WH"] as { Tooltips?: { refreshLinks?: () => void } } | undefined;
+      wh?.Tooltips?.refreshLinks?.();
+    }, 300);
+    return () => clearTimeout(id);
+  }, [data]);
+
   const [sortBy,  setSortBy]  = useState<"player" | "spec" | "reserves">("player");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
@@ -65,10 +75,6 @@ export function LootTableClient({ raids }: Props) {
         throw new Error(msg ?? "Failed to load");
       }
       setData(await res.json());
-      setTimeout(() => {
-        const wh = (window as unknown as Record<string, unknown>)["WH"] as { Tooltips?: { refreshLinks?: () => void } } | undefined;
-        wh?.Tooltips?.refreshLinks?.();
-      }, 100);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {

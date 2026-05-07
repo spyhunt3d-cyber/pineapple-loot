@@ -50,11 +50,6 @@ export function SoftReservesClient({ weeks }: Props) {
       const res = await fetch(`/api/soft-reserves?weekId=${weekId}`);
       const { reserves: data } = await res.json() as { reserves: ReserveWithRange[] };
       setReserves(data ?? []);
-      // Re-init Wowhead tooltips after data loads
-      setTimeout(() => {
-        const wh = (window as unknown as Record<string, unknown>)["WH"] as { Tooltips?: { refreshLinks?: () => void } } | undefined;
-        wh?.Tooltips?.refreshLinks?.();
-      }, 100);
       // Derive instance from first reserve and fetch boss order via itemId
       const instance = data?.[0]?.raid?.instance;
       if (instance) {
@@ -77,6 +72,16 @@ export function SoftReservesClient({ weeks }: Props) {
   useEffect(() => {
     if (selectedWeekId) loadReserves(selectedWeekId);
   }, [selectedWeekId, loadReserves]);
+
+  // Re-init Wowhead tooltips after reserves render into the DOM
+  useEffect(() => {
+    if (!reserves.length) return;
+    const id = setTimeout(() => {
+      const wh = (window as unknown as Record<string, unknown>)["WH"] as { Tooltips?: { refreshLinks?: () => void } } | undefined;
+      wh?.Tooltips?.refreshLinks?.();
+    }, 300);
+    return () => clearTimeout(id);
+  }, [reserves]);
 
   const hasNight = (night: 1 | 2) => selectedWeek?.raids.some((r) => r.night === night) ?? false;
 
