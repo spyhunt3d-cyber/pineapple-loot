@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Dark background -->
+  <rect width="64" height="64" rx="12" fill="#0d0d10"/>
+  <!-- Pineapple body -->
+  <ellipse cx="32" cy="41" rx="14" ry="17" fill="#c8a55a"/>
+  <!-- Scale pattern -->
+  <g stroke="#0d0d10" stroke-width="0.9" opacity="0.35">
+    <line x1="32" y1="24" x2="23" y2="36"/><line x1="32" y1="24" x2="41" y2="36"/>
+    <line x1="23" y1="36" x2="32" y2="48"/><line x1="41" y1="36" x2="32" y2="48"/>
+    <line x1="27.5" y1="24" x2="18.5" y2="36"/><line x1="36.5" y1="24" x2="45.5" y2="36"/>
+    <line x1="18.5" y1="36" x2="27.5" y2="48"/><line x1="45.5" y1="36" x2="36.5" y2="48"/>
+    <line x1="20" y1="30" x2="44" y2="30"/>
+    <line x1="18" y1="36" x2="46" y2="36"/>
+    <line x1="19" y1="42" x2="45" y2="42"/>
+    <line x1="22" y1="48" x2="42" y2="48"/>
+  </g>
+  <!-- Leaves -->
+  <path d="M32 25 C29 17 22 13 25 9 C27 14 30 19 32 25Z" fill="#4a9940"/>
+  <path d="M32 25 C35 17 42 13 39 9 C37 14 34 19 32 25Z" fill="#5aaa4d"/>
+  <path d="M32 25 C28 15 26 7 30 5 C31 11 31.5 18 32 25Z" fill="#5aaa4d"/>
+  <path d="M32 25 C36 15 38 7 34 5 C33 11 32.5 18 32 25Z" fill="#4a9940"/>
+</svg>

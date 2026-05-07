@@ -6,13 +6,14 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-/** Formats a date as "Mon Jan 6, 2026" */
+/** Formats a date as "Mon Jan 6, 2026" — always in UTC to avoid timezone off-by-one */
 export function formatDate(date: Date | string): string {
   return new Date(date).toLocaleDateString("en-US", {
     weekday: "short",
-    month: "short",
-    day: "numeric",
-    year: "numeric",
+    month:   "short",
+    day:     "numeric",
+    year:    "numeric",
+    timeZone: "UTC",
   });
 }
 

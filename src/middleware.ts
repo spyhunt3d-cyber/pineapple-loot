@@ -1,31 +1,21 @@
-/**
- * Protects all /admin/* routes.
- * Unauthenticated requests are redirected to /admin/login.
- * Uses NextAuth v5's auth() middleware integration.
- */
+import { getToken } from "next-auth/jwt";
+import { NextRequest, NextResponse } from "next/server";
 
-import { auth } from "@/lib/auth";
-import { NextResponse } from "next/server";
+export async function middleware(req: NextRequest) {
+  // Try both cookie name variants — Auth.js uses __Secure- prefix on HTTPS,
+  // plain name on HTTP. Behind NPM the request arrives as HTTP so we check both.
+  // Cookie is explicitly set without __Secure- prefix (plain HTTP behind NPM proxy)
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET, cookieName: "authjs.session-token" });
 
-export default auth((req) => {
-  const isAdminRoute = req.nextUrl.pathname.startsWith("/admin");
-  const isLoginPage = req.nextUrl.pathname === "/admin/login";
-  const isAuthenticated = !!req.auth;
-
-  // Allow access to the login page always
-  if (isLoginPage) return NextResponse.next();
-
-  // Redirect unauthenticated users away from /admin/*
-  if (isAdminRoute && !isAuthenticated) {
+  if (!token) {
     const loginUrl = new URL("/admin/login", req.nextUrl.origin);
     loginUrl.searchParams.set("callbackUrl", req.nextUrl.pathname);
     return NextResponse.redirect(loginUrl);
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
-  // Run middleware on admin routes but NOT on API routes or static files
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/((?!login$).+)", "/admin"],
 };

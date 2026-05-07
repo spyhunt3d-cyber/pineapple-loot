@@ -43,8 +43,7 @@ COPY --from=builder /app/public ./public
 
 # Copy Prisma files needed for migrations at runtime
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/node_modules ./node_modules
 
 # Entrypoint: run migrations then start the app
 COPY docker-entrypoint.sh ./

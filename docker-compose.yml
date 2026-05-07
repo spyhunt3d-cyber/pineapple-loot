@@ -3,18 +3,29 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: loot
     restart: unless-stopped
-    ports:
-      - "3000:3000"
     environment:
       DATABASE_URL: postgresql://plx:${DB_PASSWORD}@db:5432/pineapplelootxpress
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
       NEXTAUTH_URL: ${NEXTAUTH_URL}
       AUTH_URL: ${AUTH_URL}
+      AUTH_TRUST_HOST: "true"
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      WOWHEAD_HOST: ${WOWHEAD_HOST:-www.wowhead.com}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      NEXT_PUBLIC_RAID_NIGHT_1_DAY: ${RAID_NIGHT_1_DAY:-2}
+      NEXT_PUBLIC_RAID_NIGHT_2_DAY: ${RAID_NIGHT_2_DAY:-4}
+      NEXT_PUBLIC_RAID_START_TIME: ${RAID_START_TIME:-23:59}
+      NEXT_PUBLIC_RAID_TIMEZONE: ${RAID_TIMEZONE:-America/New_York}
+      NEXT_PUBLIC_RAID_INSTANCE: ${RAID_INSTANCE:-Siege of Orgrimmar}
       NEXT_PUBLIC_GUILD_NAME: ${NEXT_PUBLIC_GUILD_NAME:-Pineapple Express}
       NEXT_PUBLIC_GUILD_REALM: ${NEXT_PUBLIC_GUILD_REALM:-Galakrond}
       NODE_ENV: production
+    networks:
+      - kaijusan-net
+      - internal
     depends_on:
       db:
         condition: service_healthy
@@ -28,9 +39,10 @@ services:
       POSTGRES_DB: pineapplelootxpress
     volumes:
       - pgdata:/var/lib/postgresql/data
-    # Only expose DB port locally — not to the outside world
     ports:
       - "127.0.0.1:5432:5432"
+    networks:
+      - internal
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U plx -d pineapplelootxpress"]
       interval: 5s
@@ -40,3 +52,9 @@ services:
 volumes:
   pgdata:
     driver: local
+
+networks:
+  kaijusan-net:
+    external: true
+  internal:
+    driver: bridge
