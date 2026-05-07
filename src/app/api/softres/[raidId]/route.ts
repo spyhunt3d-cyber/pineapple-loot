@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchSoftresRaid, resolveItemNames } from "@/lib/softres";
-import { requireAdmin, AuthError } from "@/lib/auth";
 
 /**
  * GET /api/softres/[raidId]
@@ -20,7 +19,6 @@ export async function GET(
   }
 
   try {
-    await requireAdmin();
     const raidData = await fetchSoftresRaid(raidId);
 
     // Resolve item IDs → names in bulk
@@ -42,7 +40,6 @@ export async function GET(
       itemNames,
     });
   } catch (err) {
-    if (err instanceof AuthError) return NextResponse.json({ error: err.message }, { status: 401 });
     const message = err instanceof Error ? err.message : "Failed to fetch Softres data";
     return NextResponse.json({ error: message }, { status: 502 });
   }

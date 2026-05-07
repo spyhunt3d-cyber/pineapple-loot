@@ -31,6 +31,27 @@ export function LootTableClient({ raids }: Props) {
   const [data, setData] = useState<SoftresResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sortBy,  setSortBy]  = useState<"player" | "spec" | "reserves">("player");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+  function toggleSort(col: "player" | "spec" | "reserves") {
+    if (sortBy === col) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortBy(col); setSortDir("asc"); }
+  }
+
+  function sortVal(entry: ReserveEntry) {
+    if (sortBy === "player")   return entry.name.toLowerCase();
+    if (sortBy === "spec")     return entry.specName.toLowerCase();
+    if (sortBy === "reserves") return entry.itemsResolved.map(i => i.name).join(" ").toLowerCase();
+    return "";
+  }
+
+  const sortedEntries = data
+    ? [...data.entries].sort((a, b) => {
+        const cmp = sortVal(a).localeCompare(sortVal(b));
+        return sortDir === "asc" ? cmp : -cmp;
+      })
+    : [];
 
   async function loadReserves(id: string) {
     if (!id.trim()) return;
@@ -44,6 +65,10 @@ export function LootTableClient({ raids }: Props) {
         throw new Error(msg ?? "Failed to load");
       }
       setData(await res.json());
+      setTimeout(() => {
+        const wh = (window as unknown as Record<string, unknown>)["WH"] as { Tooltips?: { refreshLinks?: () => void } } | undefined;
+        wh?.Tooltips?.refreshLinks?.();
+      }, 100);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
@@ -131,14 +156,23 @@ export function LootTableClient({ raids }: Props) {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Player</th>
-                  <th>Spec</th>
-                  <th>Reserve 1</th>
-                  <th>Reserve 2</th>
+                  {(["player", "spec", "reserves"] as const).map(col => (
+                    <th key={col}>
+                      <button
+                        onClick={() => toggleSort(col)}
+                        className="flex items-center gap-1 hover:text-[--color-gold] transition-colors uppercase tracking-wide text-[10px] font-semibold"
+                      >
+                        {col === "player" ? "Player" : col === "spec" ? "Spec" : "Reserves"}
+                        <span className={`text-[10px] ${sortBy === col ? "text-[--color-gold]" : "opacity-30"}`}>
+                          {sortBy === col ? (sortDir === "asc" ? "↑" : "↓") : "↕"}
+                        </span>
+                      </button>
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {data.entries.map((entry, idx) => {
+                {sortedEntries.map((entry, idx) => {
                   const classColor = CLASS_COLORS[entry.class] ?? "#e2e0d8";
                   return (
                     <tr key={idx}>
@@ -148,26 +182,28 @@ export function LootTableClient({ raids }: Props) {
                       <td className="muted text-xs" style={{ color: classColor }}>
                         {entry.specName}
                       </td>
-                      {[0, 1].map((slotIdx) => {
-                        const item = entry.itemsResolved[slotIdx];
-                        return (
-                          <td key={slotIdx}>
-                            {item ? (
-                              <a
-                                href={getWowheadItemUrl(item.id, selectedRaid?.instance)}
-                                data-wowhead={getWowheadDataAttr(item.id, selectedRaid?.instance)}
-                                className="item-link"
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                {item.name}
-                              </a>
-                            ) : (
-                              <span className="text-[--color-text-muted]">—</span>
-                            )}
-                          </td>
-                        );
-                      })}
+                      <td>
+                        {entry.itemsResolved.length === 0 ? (
+                          <span className="text-[--color-text-muted]">—</span>
+                        ) : (
+                          <span className="flex flex-wrap items-center gap-1">
+                            {entry.itemsResolved.map((item, i) => (
+                              <span key={i} className="flex items-center gap-1">
+                                {i > 0 && <span className="text-[--color-text-muted]">/</span>}
+                                <a
+                                  href={getWowheadItemUrl(item.id, selectedRaid?.instance)}
+                                  data-wowhead={getWowheadDataAttr(item.id, selectedRaid?.instance)}
+                                  className="item-link"
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  {item.name}
+                                </a>
+                              </span>
+                            ))}
+                          </span>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}

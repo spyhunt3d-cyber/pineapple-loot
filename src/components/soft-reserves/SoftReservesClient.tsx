@@ -37,6 +37,8 @@ export function SoftReservesClient({ weeks }: Props) {
   const [selectedWeekId, setSelectedWeekId] = useState<number | null>(weeks[0]?.id ?? null);
   const [activeNight, setActiveNight]         = useState<1 | 2>(1);
   const [reserves, setReserves]               = useState<ReserveWithRange[]>([]);
+  const [bossOrder,   setBossOrder]   = useState<Record<string, number>>({});   // bossName → order
+  const [itemBossMap, setItemBossMap] = useState<Record<string, number>>({});   // itemId → bossOrder
   const [loading, setLoading]                 = useState(false);
   const [search, setSearch]                   = useState("");
 
@@ -46,8 +48,27 @@ export function SoftReservesClient({ weeks }: Props) {
     setLoading(true);
     try {
       const res = await fetch(`/api/soft-reserves?weekId=${weekId}`);
-      const { reserves: data } = await res.json();
+      const { reserves: data } = await res.json() as { reserves: ReserveWithRange[] };
       setReserves(data ?? []);
+      // Re-init Wowhead tooltips after data loads
+      setTimeout(() => {
+        const wh = (window as unknown as Record<string, unknown>)["WH"] as { Tooltips?: { refreshLinks?: () => void } } | undefined;
+        wh?.Tooltips?.refreshLinks?.();
+      }, 100);
+      // Derive instance from first reserve and fetch boss order via itemId
+      const instance = data?.[0]?.raid?.instance;
+      if (instance) {
+        const r2 = await fetch(`/api/raid-loot?instance=${encodeURIComponent(instance)}`);
+        const { items } = await r2.json() as { items: { itemId: string; bossName: string; bossOrder: number }[] };
+        const byName: Record<string, number> = {};
+        const byItem: Record<string, number> = {};
+        for (const item of (items ?? [])) {
+          byName[item.bossName] = item.bossOrder;
+          byItem[item.itemId]   = item.bossOrder;
+        }
+        setBossOrder(byName);
+        setItemBossMap(byItem);
+      }
     } finally {
       setLoading(false);
     }
@@ -81,18 +102,27 @@ export function SoftReservesClient({ weeks }: Props) {
     )
   );
 
-  const filteredBosses = Object.entries(byBoss).filter(([boss, items]) => {
-    if (!search) return true;
-    const q = search.toLowerCase();
-    return (
-      boss.toLowerCase().includes(q) ||
-      Object.entries(items).some(
-        ([key, players]) =>
-          key.toLowerCase().includes(q) ||
-          players.some((p) => p.player.charName.toLowerCase().includes(q))
-      )
-    );
-  });
+  const filteredBosses = Object.entries(byBoss)
+    .filter(([boss, items]) => {
+      if (!search) return true;
+      const q = search.toLowerCase();
+      return (
+        boss.toLowerCase().includes(q) ||
+        Object.entries(items).some(
+          ([key, players]) =>
+            key.toLowerCase().includes(q) ||
+            players.some((p) => p.player.charName.toLowerCase().includes(q))
+        )
+      );
+    })
+    .sort(([aBoss, aItems], [bBoss, bItems]) => {
+      // Try itemId lookup first (reliable), fall back to boss name lookup
+      const firstItemA = Object.values(aItems)[0]?.[0]?.itemId;
+      const firstItemB = Object.values(bItems)[0]?.[0]?.itemId;
+      const ao = (firstItemA ? itemBossMap[firstItemA] : undefined) ?? bossOrder[aBoss] ?? 999;
+      const bo = (firstItemB ? itemBossMap[firstItemB] : undefined) ?? bossOrder[bBoss] ?? 999;
+      return ao !== bo ? ao - bo : aBoss.localeCompare(bBoss);
+    });
 
   const totalItems   = Object.values(byBoss).reduce((s, items) => s + Object.keys(items).length, 0);
   const totalPlayers = new Set(nightReserves.map((r) => r.player.charName)).size;
