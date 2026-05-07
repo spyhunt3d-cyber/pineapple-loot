@@ -2,8 +2,6 @@
 
 A full-featured WoW Classic loot management web app built for the **Pineapple Express** guild on Galakrond — designed for **Mists of Pandaria Classic** and compatible with all Classic expansions.
 
-Live at: **[loot.pineapple-xpress.org](https://loot.pineapple-xpress.org)**
-
 ---
 
 ## Overview
