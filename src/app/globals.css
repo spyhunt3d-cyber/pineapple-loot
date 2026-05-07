@@ -425,6 +425,7 @@ body {
 #wowhead-tooltip {
   max-width: 320px !important;
   z-index: 9999 !important;
+  right: auto !important;
 }
 
 /* ── Hide number input spinners ── */
