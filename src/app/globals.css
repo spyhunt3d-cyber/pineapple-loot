@@ -421,6 +421,12 @@ body {
   color: var(--color-gold);
 }
 
+/* ── Wowhead tooltip positioning ── */
+#wowhead-tooltip {
+  max-width: 320px !important;
+  z-index: 9999 !important;
+}
+
 /* ── Hide number input spinners ── */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
