@@ -1,14 +1,14 @@
-# 🍍 Pineapple Loot Xpress
+# SoftRes Loot System
 
-A full-featured WoW Classic loot management web app built for the **Pineapple Express** guild on Galakrond — designed for **Mists of Pandaria Classic** and compatible with all Classic expansions.
+A full-featured WoW Classic loot management web app — originally built for a guild on Galakrond running **Mists of Pandaria Classic**, compatible with all Classic expansions.
 
-> **Built for any guild.** This project is open to fork or copy — swap out the name, emoji, and colours via environment variables and it's yours. See [Branding](#branding) below.
+> **Built for any guild.** Fork or copy freely — swap out the name, emoji, and colours via environment variables and it's yours. See [Branding](#branding) below.
 
 ---
 
 ## Overview
 
-Pineapple Loot Xpress replaces spreadsheets and manual Discord tracking with a centralised loot management system covering the full raid lifecycle:
+SoftRes Loot System replaces spreadsheets and manual Discord tracking with a centralised loot management system covering the full raid lifecycle:
 
 - Weekly raid setup via Raid-Helper + Softres.it integration
 - Soft reserve tracking with automatic stacking (weeks consecutive)
@@ -327,7 +327,7 @@ All visible branding is driven by environment variables — no code changes requ
 | `NEXT_PUBLIC_GUILD_NAME` | `Pineapple Express` | Guild name used in loot exports |
 | `NEXT_PUBLIC_GUILD_REALM` | `Galakrond` | Realm name shown on public pages |
 
-To replace all Pineapple Express branding, set these in your `.env`:
+To brand it for your guild, set these in your `.env`:
 
 ```env
 NEXT_PUBLIC_APP_NAME="Crimson Tide Loot"
@@ -343,7 +343,7 @@ For custom icons, replace `/public/icon.svg` with your own SVG — it's used as 
 
 ## Acknowledgements
 
-Built for **Pineapple Express** — Galakrond, MoP Classic.  
+Originally built for a guild on Galakrond — MoP Classic.  
 In-game loot tracking via [Gargul](https://www.curseforge.com/wow/addons/gargul).  
 Reserve system via [Softres.it](https://softres.it).  
 Event scheduling via [Raid-Helper](https://raid-helper.dev).
