@@ -17,7 +17,7 @@ export function getRaidSchedule(): RaidSchedule {
     night2Day: parseInt(process.env.NEXT_PUBLIC_RAID_NIGHT_2_DAY ?? "4", 10), // Thursday
     startTime: process.env.NEXT_PUBLIC_RAID_START_TIME ?? "23:59",
     timezone:  process.env.NEXT_PUBLIC_RAID_TIMEZONE  ?? "America/New_York",
-    instance:  process.env.NEXT_PUBLIC_RAID_INSTANCE  ?? "Siege of Orgrimmar",
+    instance:  process.env.NEXT_PUBLIC_RAID_INSTANCE  ?? "",
   };
 }
 
