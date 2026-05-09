@@ -153,9 +153,9 @@ NEXT_PUBLIC_GUILD_REALM="Your Realm"
 # Raid schedule
 RAID_NIGHT_1_DAY="2"        # 0=Sun … 6=Sat
 RAID_NIGHT_2_DAY="4"
-RAID_START_TIME="23:59"
+RAID_START_TIME="20:00"
 RAID_TIMEZONE="America/New_York"
-RAID_INSTANCE="Siege of Orgrimmar"
+RAID_INSTANCE=""            # leave blank — admins select the instance per raid week
 
 # Raid-Helper (optional)
 RAID_HELPER_API_KEY="your_key"
