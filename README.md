@@ -50,7 +50,7 @@ Pineapple Loot Xpress replaces spreadsheets and manual Discord tracking with a c
   - Multi-raid tier groups (e.g. MoP T14 = MSV + HoF + ToES)
   - Collapsible drawer navigation
   - Per-item priority chain builder with class/spec suggestions
-  - Tier token class mapping for all expansions (WotLK → MoP)
+  - Tier token class mapping for all expansions (Vanilla Classic T1/T2/T3 → TBC → WotLK → Cata → MoP)
   - Import from Google Drive sheets or paste CSV
   - Fix Slots & Types backfill
   - Stat columns (STR/AGI/STA/CRT/HIT/MST/HST/EXP) with hover tooltips
@@ -80,7 +80,7 @@ Prio > Class MS > Class MS = Class MS > All OS > Disenchant = Transmog
 - `>` = lower priority tier
 - `=` = tied priority (same tier)
 - Chains are built via a visual priority builder with class/spec dropdowns
-- Tier tokens automatically suggest eligible classes per expansion (Conqueror/Vanquisher/Protector)
+- Tier tokens automatically suggest eligible classes per expansion — shared tokens (Conqueror/Vanquisher/Protector) for TBC+, and named set detection for Vanilla T1/T2/T3 (e.g. Lawbringer → Paladin, Dragonstalker → Hunter, Plagueheart → Warlock)
 - Class suggestions filter by armor type (Plate/Mail/Leather/Cloth) and primary stats
 
 ### Win Types
@@ -105,9 +105,19 @@ Multi-raid tiers are supported out of the box:
 | MoP T15 | Throne of Thunder |
 | MoP T16 | Siege of Orgrimmar |
 | Cata T11 | Blackwing Descent + Bastion of Twilight + Throne of the Four Winds |
+| Cata T12 | Firelands |
+| Cata T13 | Dragon Soul |
 | WotLK T7 | Naxxramas + Obsidian Sanctum + Eye of Eternity + Vault of Archavon |
+| WotLK T8 | Ulduar |
+| WotLK T9 | Trial of the Crusader |
 | WotLK T10 | Icecrown Citadel + Ruby Sanctum |
-| … | All expansions through Classic |
+| TBC T4 | Karazhan + Gruul's Lair + Magtheridon's Lair |
+| TBC T5 | Serpentshrine Cavern + The Eye |
+| TBC T6 | Battle for Mount Hyjal + Black Temple + Sunwell Plateau |
+| Classic T1 | Molten Core |
+| Classic T2 | Blackwing Lair |
+| Classic T2.5 | Temple of Ahn'Qiraj |
+| Classic T3 | Naxxramas (40) |
 
 ---
 
