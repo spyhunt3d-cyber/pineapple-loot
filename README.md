@@ -188,6 +188,86 @@ docker exec loot npx prisma migrate deploy
 
 ---
 
+## Google Drive / Sheets Integration
+
+The admin import panel can browse your Google Drive and pull loot priority sheets directly from Google Sheets. This requires a Google OAuth 2.0 credential tied to your app's domain.
+
+### 1. Create a Google Cloud Project
+
+1. Go to [console.cloud.google.com](https://console.cloud.google.com)
+2. Click **Select a project → New Project**, give it a name (e.g. `Loot Xpress`), and create it
+3. Make sure the new project is selected in the top bar
+
+### 2. Enable the Required APIs
+
+1. Go to **APIs & Services → Library**
+2. Search for and enable **Google Drive API**
+3. Search for and enable **Google Sheets API**
+
+### 3. Configure the OAuth Consent Screen
+
+1. Go to **APIs & Services → OAuth consent screen**
+2. Choose **External** (unless you have a Google Workspace org), click **Create**
+3. Fill in:
+   - **App name** — anything (e.g. `Loot Xpress`)
+   - **User support email** — your email
+   - **Developer contact email** — your email
+4. Click **Save and Continue** through Scopes (you'll add scopes via the credential, not here)
+5. Under **Test users**, add the Google account(s) that will connect to the app
+6. Click **Save and Continue**, then **Back to Dashboard**
+
+> While the app is in **Testing** mode only added test users can connect — this is fine for a private guild tool. You do not need to publish or verify the app.
+
+### 4. Create an OAuth 2.0 Credential
+
+1. Go to **APIs & Services → Credentials**
+2. Click **+ Create Credentials → OAuth client ID**
+3. Set **Application type** to **Web application**
+4. Give it a name (e.g. `Loot Xpress Web`)
+5. Under **Authorized redirect URIs**, add:
+   ```
+   https://your-domain.com/api/auth/google/callback
+   ```
+   Replace `your-domain.com` with your actual domain (must match `AUTH_URL` in your `.env`)
+6. Click **Create**
+7. Copy the **Client ID** and **Client Secret** from the popup
+
+### 5. Add to Your `.env`
+
+```env
+GOOGLE_CLIENT_ID="your_client_id.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET="your_client_secret"
+```
+
+Then restart the app:
+
+```bash
+docker compose up -d --force-recreate app
+```
+
+### 6. Connect the Account in the Admin Panel
+
+1. Log in to the admin panel and go to **Import**
+2. Click **Connect Google Account** — you'll be redirected to Google's consent screen
+3. Sign in with the Google account that has access to your sheets
+4. Grant the requested permissions (Drive read-only + Sheets read-only)
+5. You'll be redirected back — the panel will now show a **Browse Drive** button
+
+The access token is stored in the database and refreshes automatically. You only need to connect once.
+
+### 7. Importing a Priority Sheet
+
+1. In **Admin → Import**, click **Browse Drive** and find your Google Sheet
+2. Select the sheet — tabs are listed automatically
+3. Pick the tab(s) to import; columns are detected automatically (item name, item ID, priority chain, notes, etc.)
+4. Map any unrecognised columns if prompted, then click **Import**
+
+### Disconnecting
+
+To revoke access, click **Disconnect Google** in the Import panel. This removes the stored tokens from the database. You can reconnect at any time.
+
+---
+
 ## Project Structure
 
 ```
