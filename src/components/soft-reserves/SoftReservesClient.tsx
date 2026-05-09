@@ -234,10 +234,11 @@ export function SoftReservesClient({ weeks }: Props) {
                           data-wowhead={getWowheadDataAttr(itemId, players[0]?.raid.instance)}
                           target="_blank"
                           rel="noreferrer"
-                          className="item-link font-semibold text-sm flex-1"
+                          className="item-link font-semibold text-sm min-w-0 shrink"
                         >
                           {itemName}
                         </a>
+                        <div className="flex-1" />
                         <span className="text-xs text-[--color-text-muted]">
                           {players.length} SR{players.length !== 1 ? "s" : ""}
                         </span>
