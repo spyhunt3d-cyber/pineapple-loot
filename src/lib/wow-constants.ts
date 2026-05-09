@@ -246,6 +246,11 @@ export const RAID_TIER_GROUPS: { label: string; instances: string[] }[] = [
   { label: "TBC T4 (Kara + Gruul + Mag)",             instances: ["Karazhan", "Gruul's Lair", "Magtheridon's Lair"] },
   { label: "TBC T5 (SSC + TK)",                       instances: ["Serpentshrine Cavern", "The Eye"] },
   { label: "TBC T6 (Hyjal + BT + Sunwell)",           instances: ["Battle for Mount Hyjal", "Black Temple", "Sunwell Plateau"] },
+  // Vanilla / Classic
+  { label: "Classic T1 — Tier 1 (Molten Core)",       instances: ["Molten Core"] },
+  { label: "Classic T2 — Tier 2 (Blackwing Lair)",    instances: ["Blackwing Lair"] },
+  { label: "Classic T2.5 — AQ40",                     instances: ["Temple of Ahn'Qiraj"] },
+  { label: "Classic T3 — Tier 3 (Naxxramas 40)",      instances: ["Naxxramas (40)"] },
 ];
 
 export const RAID_INSTANCE_GROUPS: { label: string; raids: string[] }[] = [
@@ -437,18 +442,85 @@ const TOKEN_MAPS: { instances: string[]; map: TokenMap }[] = [
   },
 ];
 
+// Vanilla T1/T2/T3 tier sets — class-specific named pieces, no shared tokens.
+// Each entry maps a set name keyword to the single class that wears it.
+// Order matters for "wrath" — check specific phrases before short keywords.
+const VANILLA_TIER_SETS: { keyword: string; class: string }[] = [
+  // T1 — Molten Core (Tier 1)
+  { keyword: "lawbringer",          class: "Paladin"  }, // Lawbringer Armor
+  { keyword: "giantstalker",        class: "Hunter"   }, // Giantstalker Armor
+  { keyword: "ten storms",          class: "Shaman"   }, // The Ten Storms
+  { keyword: "nightslayer",         class: "Rogue"    }, // Nightslayer Armor
+  { keyword: "cenarion",            class: "Druid"    }, // Cenarion Raiment
+  { keyword: "arcanist",            class: "Mage"     }, // Arcanist Regalia
+  { keyword: "felheart",            class: "Warlock"  }, // Felheart Raiment
+  { keyword: "vestments of prophecy", class: "Priest" }, // Vestments of Prophecy
+  { keyword: "mantle of prophecy",    class: "Priest" },
+  { keyword: "crown of prophecy",     class: "Priest" },
+  { keyword: "boots of prophecy",     class: "Priest" },
+  { keyword: "pants of prophecy",     class: "Priest" },
+  { keyword: "gloves of prophecy",    class: "Priest" },
+  { keyword: "girdle of prophecy",    class: "Priest" },
+  { keyword: "shoulders of prophecy", class: "Priest" },
+  { keyword: "circlet of prophecy",   class: "Priest" },
+  { keyword: "bracers of might",      class: "Warrior" }, // T1 Warrior — check phrases before "might"
+  { keyword: "helm of might",         class: "Warrior" },
+  { keyword: "pauldrons of might",    class: "Warrior" },
+  { keyword: "breastplate of might",  class: "Warrior" },
+  { keyword: "gauntlets of might",    class: "Warrior" },
+  { keyword: "belt of might",         class: "Warrior" },
+  { keyword: "legplates of might",    class: "Warrior" },
+  { keyword: "sabatons of might",     class: "Warrior" },
+  // T2 — Blackwing Lair (Tier 2)
+  { keyword: "judgement",           class: "Paladin"  }, // Judgement Armor
+  { keyword: "dragonstalker",       class: "Hunter"   }, // Dragonstalker Armor
+  { keyword: "earthfury",           class: "Shaman"   }, // The Earthfury
+  { keyword: "bloodfang",           class: "Rogue"    }, // Bloodfang Armor
+  { keyword: "stormrage",           class: "Druid"    }, // Stormrage Raiment
+  { keyword: "netherwind",          class: "Mage"     }, // Netherwind Regalia
+  { keyword: "nemesis",             class: "Warlock"  }, // Nemesis Raiment
+  { keyword: "transcendence",       class: "Priest"   }, // Vestments of Transcendence
+  { keyword: "helm of wrath",       class: "Warrior"  }, // T2 Warrior — check phrases before "wrath"
+  { keyword: "pauldrons of wrath",  class: "Warrior"  },
+  { keyword: "breastplate of wrath",class: "Warrior"  },
+  { keyword: "bracers of wrath",    class: "Warrior"  },
+  { keyword: "gauntlets of wrath",  class: "Warrior"  },
+  { keyword: "belt of wrath",       class: "Warrior"  },
+  { keyword: "legplates of wrath",  class: "Warrior"  },
+  { keyword: "sabatons of wrath",   class: "Warrior"  },
+  // T3 — Naxxramas 40 (Tier 3)
+  { keyword: "dreadnaught",         class: "Warrior"  }, // Dreadnaught's Battlegear
+  { keyword: "redemption",          class: "Paladin"  }, // Redemption Armor
+  { keyword: "cryptstalker",        class: "Hunter"   }, // Cryptstalker Armor
+  { keyword: "earthshatterer",      class: "Shaman"   }, // The Earthshatterer
+  { keyword: "bonescythe",          class: "Rogue"    }, // Bonescythe Armor
+  { keyword: "dreamwalker",         class: "Druid"    }, // Dreamwalker Raiment
+  { keyword: "frostfire",           class: "Mage"     }, // Frostfire Regalia
+  { keyword: "plagueheart",         class: "Warlock"  }, // Plagueheart Raiment
+  { keyword: "vestments of faith",  class: "Priest"   }, // Vestments of Faith
+  { keyword: "halo of transcendence", class: "Priest" }, // already covered but alias
+  { keyword: "shroud of transcendence", class: "Priest" },
+];
+
 /** Returns eligible classes for a tier token item, or null if not a token. */
 export function getTierTokenClasses(itemName: string, instance?: string | null): string[] | null {
   const lower = itemName.toLowerCase();
-  const hasKeyword = lower.includes("conqueror") || lower.includes("vanquisher") || lower.includes("protector");
-  if (!hasKeyword) return null;
 
-  const entry = instance ? TOKEN_MAPS.find(e => e.instances.includes(instance)) : null;
-  const map = entry?.map ?? TOKEN_MAPS[1].map; // fallback to T15/T16 (most common)
+  // TBC+ shared tokens (conqueror / vanquisher / protector)
+  const hasSharedToken = lower.includes("conqueror") || lower.includes("vanquisher") || lower.includes("protector");
+  if (hasSharedToken) {
+    const entry = instance ? TOKEN_MAPS.find(e => e.instances.includes(instance)) : null;
+    const map = entry?.map ?? TOKEN_MAPS[1].map; // fallback to T15/T16 (most common)
+    if (lower.includes("conqueror")) return map.conqueror;
+    if (lower.includes("vanquisher")) return map.vanquisher;
+    if (lower.includes("protector")) return map.protector;
+  }
 
-  if (lower.includes("conqueror")) return map.conqueror;
-  if (lower.includes("vanquisher")) return map.vanquisher;
-  if (lower.includes("protector")) return map.protector;
+  // Vanilla T1/T2/T3 — class-specific named pieces
+  for (const { keyword, class: cls } of VANILLA_TIER_SETS) {
+    if (lower.includes(keyword)) return [cls];
+  }
+
   return null;
 }
 
