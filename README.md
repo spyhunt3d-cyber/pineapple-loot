@@ -101,23 +101,23 @@ Multi-raid tiers are supported out of the box:
 
 | Tier | Raids |
 |---|---|
-| MoP T14 | Mogu'shan Vaults + Heart of Fear + Terrace of Endless Spring |
-| MoP T15 | Throne of Thunder |
-| MoP T16 | Siege of Orgrimmar |
-| Cata T11 | Blackwing Descent + Bastion of Twilight + Throne of the Four Winds |
-| Cata T12 | Firelands |
-| Cata T13 | Dragon Soul |
-| WotLK T7 | Naxxramas + Obsidian Sanctum + Eye of Eternity + Vault of Archavon |
-| WotLK T8 | Ulduar |
-| WotLK T9 | Trial of the Crusader |
-| WotLK T10 | Icecrown Citadel + Ruby Sanctum |
-| TBC T4 | Karazhan + Gruul's Lair + Magtheridon's Lair |
-| TBC T5 | Serpentshrine Cavern + The Eye |
-| TBC T6 | Battle for Mount Hyjal + Black Temple + Sunwell Plateau |
 | Classic T1 | Molten Core |
 | Classic T2 | Blackwing Lair |
 | Classic T2.5 | Temple of Ahn'Qiraj |
 | Classic T3 | Naxxramas (40) |
+| TBC T4 | Karazhan + Gruul's Lair + Magtheridon's Lair |
+| TBC T5 | Serpentshrine Cavern + The Eye |
+| TBC T6 | Battle for Mount Hyjal + Black Temple + Sunwell Plateau |
+| WotLK T7 | Naxxramas + Obsidian Sanctum + Eye of Eternity + Vault of Archavon |
+| WotLK T8 | Ulduar |
+| WotLK T9 | Trial of the Crusader |
+| WotLK T10 | Icecrown Citadel + Ruby Sanctum |
+| Cata T11 | Blackwing Descent + Bastion of Twilight + Throne of the Four Winds |
+| Cata T12 | Firelands |
+| Cata T13 | Dragon Soul |
+| MoP T14 | Mogu'shan Vaults + Heart of Fear + Terrace of Endless Spring |
+| MoP T15 | Throne of Thunder |
+| MoP T16 | Siege of Orgrimmar |
 
 ---
 
