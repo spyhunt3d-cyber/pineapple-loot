@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { parseWowheadTooltip } from "@/lib/wowhead-parser";
+import { BRANDING } from "@/lib/branding";
 
 const WOWHEAD_HOST = process.env.WOWHEAD_HOST ?? "nether.wowhead.com";
 
@@ -19,7 +20,7 @@ export async function GET(req: NextRequest) {
   try {
     const res = await fetch(
       `https://${WOWHEAD_HOST}/tooltip/item/${itemId}?dataEnv=15&locale=0`,
-      { headers: { Accept: "application/json", "User-Agent": "PineappleLootXpress/1.0" }, cache: "no-store" }
+      { headers: { Accept: "application/json", "User-Agent": BRANDING.userAgent }, cache: "no-store" }
     );
     if (!res.ok) return NextResponse.json({ error: "Not found" }, { status: 404 });
 

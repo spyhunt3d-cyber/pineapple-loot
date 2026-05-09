@@ -4,6 +4,7 @@ import { slotToType, getTierTokenClasses } from "@/lib/wow-constants";
 import { requireAdmin, AuthError } from "@/lib/auth";
 import { getZoneData } from "@/lib/raid-zones";
 import { parseWowheadTooltip } from "@/lib/wowhead-parser";
+import { BRANDING } from "@/lib/branding";
 
 const WOWHEAD_HOST = process.env.WOWHEAD_HOST ?? "nether.wowhead.com";
 
@@ -11,7 +12,7 @@ async function fetchWowheadStats(itemId: number) {
   try {
     const res = await fetch(
       `https://${WOWHEAD_HOST}/tooltip/item/${itemId}?dataEnv=15&locale=0`,
-      { headers: { "User-Agent": "PineappleLootXpress/1.0" }, cache: "no-store" }
+      { headers: { "User-Agent": BRANDING.userAgent }, cache: "no-store" }
     );
     if (!res.ok) return null;
     const data = await res.json() as Record<string, unknown>;

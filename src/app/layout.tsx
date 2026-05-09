@@ -4,8 +4,8 @@ import { WowheadTooltips } from "@/components/WowheadTooltips";
 import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
-  title: "Pineapple Loot Xpress",
-  description: "Guild loot management for Pineapple Express — Soft reserves, loot priority, and win tracking.",
+  title: process.env.NEXT_PUBLIC_APP_NAME ?? "Pineapple Loot Xpress",
+  description: process.env.NEXT_PUBLIC_APP_DESCRIPTION ?? "Guild loot management — Soft reserves, loot priority, and win tracking.",
   icons: { icon: [{ url: "/icon.svg", type: "image/svg+xml" }] },
 };
 

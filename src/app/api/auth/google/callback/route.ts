@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { exchangeCode } from "@/lib/google-oauth";
 
-const BASE_URL = process.env.AUTH_URL ?? "https://loot.pineapple-xpress.org";
+const BASE_URL = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
 
 export async function GET(req: NextRequest) {
   const code  = req.nextUrl.searchParams.get("code");

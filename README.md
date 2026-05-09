@@ -2,6 +2,8 @@
 
 A full-featured WoW Classic loot management web app built for the **Pineapple Express** guild on Galakrond — designed for **Mists of Pandaria Classic** and compatible with all Classic expansions.
 
+> **Built for any guild.** This project is open to fork or copy — swap out the name, emoji, and colours via environment variables and it's yours. See [Branding](#branding) below.
+
 ---
 
 ## Overview
@@ -220,6 +222,32 @@ Dark WoW-inspired theme with gold accents:
 | `--color-border` | `#2e2f3e` | Borders |
 
 Global utility classes: `.btn-gold-solid`, `.btn-gold`, `.btn-ghost`, `.btn-danger`, `.btn-tab`, `.btn-add`, `.btn-secondary`, `.field`, `.data-table`, `.page-title`, `.section-label`
+
+---
+
+## Branding
+
+All visible branding is driven by environment variables — no code changes required.
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `NEXT_PUBLIC_APP_NAME` | `Pineapple Loot Xpress` | App name shown in the navbar, admin panel, page title, and login screen |
+| `NEXT_PUBLIC_APP_EMOJI` | `🍍` | Emoji shown next to the app name |
+| `NEXT_PUBLIC_APP_DESCRIPTION` | *(generic description)* | Browser tab / SEO description |
+| `NEXT_PUBLIC_GUILD_NAME` | `Pineapple Express` | Guild name used in loot exports |
+| `NEXT_PUBLIC_GUILD_REALM` | `Galakrond` | Realm name shown on public pages |
+
+To replace all Pineapple Express branding, set these in your `.env`:
+
+```env
+NEXT_PUBLIC_APP_NAME="Crimson Tide Loot"
+NEXT_PUBLIC_APP_EMOJI="🔴"
+NEXT_PUBLIC_APP_DESCRIPTION="Crimson Tide guild loot tracker — WoW Classic"
+NEXT_PUBLIC_GUILD_NAME="Crimson Tide"
+NEXT_PUBLIC_GUILD_REALM="Benediction"
+```
+
+For custom icons, replace `/public/icon.svg` with your own SVG — it's used as the browser favicon.
 
 ---
 

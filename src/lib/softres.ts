@@ -11,6 +11,7 @@
 
 import { prisma } from "./prisma";
 import { SPEC_ID_MAP } from "./wow-constants";
+import { BRANDING } from "./branding";
 
 // Wowhead subdomain — override via env for Classic realms
 // e.g. WOWHEAD_HOST=wotlk.wowhead.com  or  classic.wowhead.com
@@ -104,7 +105,7 @@ export async function fetchSoftresRaid(raidId: string): Promise<SoftresRaidData>
   const res = await fetch(`https://softres.it/api/raid/${raidId}`, {
     headers: {
       Accept: "application/json",
-      "User-Agent": "PineappleLootXpress/1.0",
+      "User-Agent": BRANDING.userAgent,
     },
     // Don't use Next.js fetch cache on top of our own — one TTL is enough
     cache: "no-store",
@@ -174,7 +175,7 @@ async function fetchItemName(id: string): Promise<{ id: string; name: string; ic
       const res = await fetch(`https://${WOWHEAD_HOST}/tooltip/item/${id}`, {
         headers: {
           Accept: "application/json",
-          "User-Agent": "PineappleLootXpress/1.0",
+          "User-Agent": BRANDING.userAgent,
         },
       });
 

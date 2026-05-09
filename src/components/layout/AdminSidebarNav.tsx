@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
+import { BRANDING } from "@/lib/branding";
 
 const ADMIN_NAV = [
   { href: "/admin",               label: "Dashboard",    icon: "◈" },
@@ -44,7 +45,7 @@ export function AdminSidebarNav() {
       <aside className="hidden md:flex w-56 shrink-0 border-r border-[--color-border] bg-[--color-surface] flex-col">
         {/* Brand */}
         <div className="p-4 border-b border-[--color-border]">
-          <p className="text-sm font-bold text-[--color-gold]">🍍 Pineapple Loot</p>
+          <p className="text-sm font-bold text-[--color-gold]">{BRANDING.emoji} {BRANDING.appName}</p>
           <p className="section-label mt-0.5">Admin Panel</p>
         </div>
 
@@ -78,7 +79,7 @@ export function AdminSidebarNav() {
       <div className="md:hidden border-b border-[--color-border] bg-[--color-surface] shrink-0">
         {/* Header row */}
         <div className="flex items-center justify-between px-4 py-2.5 border-b border-[--color-border]">
-          <span className="text-sm font-bold text-[--color-gold]">🍍 Admin</span>
+          <span className="text-sm font-bold text-[--color-gold]">{BRANDING.emoji} Admin</span>
           <div className="flex items-center gap-2">
             <Link href="/" className="text-xs text-[--color-text-muted] hover:text-[--color-text] px-2 py-1">
               ← Public

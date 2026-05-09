@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { BRANDING } from "@/lib/branding";
 
 const NAV_LINKS = [
   { href: "/loot-table",    label: "Loot Table" },
@@ -21,7 +22,7 @@ export function NavBar() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 shrink-0">
             <span className="text-base sm:text-lg font-bold tracking-wide text-[--color-gold]">
-              🍍 <span className="hidden xs:inline">Pineapple </span>Loot Xpress
+              {BRANDING.emoji} {BRANDING.appName}
             </span>
           </Link>
 

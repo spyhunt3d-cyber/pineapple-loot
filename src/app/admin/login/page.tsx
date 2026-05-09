@@ -80,10 +80,10 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-[--color-border] bg-[--color-surface] text-3xl">
-            🍍
+            {process.env.NEXT_PUBLIC_APP_EMOJI ?? "🍍"}
           </div>
           <h1 className="text-2xl font-bold text-[--color-gold]">Admin Access</h1>
-          <p className="mt-1 text-sm text-[--color-text-muted]">Pineapple Loot Xpress</p>
+          <p className="mt-1 text-sm text-[--color-text-muted]">{process.env.NEXT_PUBLIC_APP_NAME ?? "Pineapple Loot Xpress"}</p>
         </div>
 
         <div className="rounded-lg border border-[--color-border] bg-[--color-surface] p-6">
