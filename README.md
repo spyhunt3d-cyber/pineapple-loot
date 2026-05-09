@@ -226,7 +226,6 @@ Global utility classes: `.btn-gold-solid`, `.btn-gold`, `.btn-ghost`, `.btn-dang
 ## Acknowledgements
 
 Built for **Pineapple Express** — Galakrond, MoP Classic.  
-Loot priority data compatible with [Joardee + Pummel's MoP Phase 1 Sheet](https://docs.google.com/spreadsheets/d/1p3l_djFEmsmlyozl5cHKscndRacXZlBSJkV_5No_ULA).  
 In-game loot tracking via [Gargul](https://www.curseforge.com/wow/addons/gargul).  
 Reserve system via [Softres.it](https://softres.it).  
 Event scheduling via [Raid-Helper](https://raid-helper.dev).
